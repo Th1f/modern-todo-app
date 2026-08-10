@@ -1,0 +1,142 @@
+[
+  {
+    "id": "1",
+    "name": "Complete project report",
+    "color": "#3B82F6",
+    "category": "Work",
+    "isDone": false
+  },
+  {
+    "id": "2",
+    "name": "Review code changes",
+    "color": "#3B82F6",
+    "category": "Work",
+    "isDone": true
+  },
+  {
+    "id": "3",
+    "name": "Schedule team meeting",
+    "color": "#3B82F6",
+    "category": "Work",
+    "isDone": false
+  },
+  {
+    "id": "4",
+    "name": "Update documentation",
+    "color": "#3B82F6",
+    "category": "Work",
+    "isDone": true
+  },
+  {
+    "id": "5",
+    "name": "Fix bug in login",
+    "color": "#3B82F6",
+    "category": "Work",
+    "isDone": false
+  },
+  {
+    "id": "6",
+    "name": "Call dentist",
+    "color": "#10B981",
+    "category": "Personal",
+    "isDone": false
+  },
+  {
+    "id": "7",
+    "name": "Workout at gym",
+    "color": "#10B981",
+    "category": "Personal",
+    "isDone": true
+  },
+  {
+    "id": "8",
+    "name": "Read book chapter",
+    "color": "#10B981",
+    "category": "Personal",
+    "isDone": false
+  },
+  {
+    "id": "9",
+    "name": "Plan weekend trip",
+    "color": "#10B981",
+    "category": "Personal",
+    "isDone": false
+  },
+  {
+    "id": "10",
+    "name": "Meditate for 20 minutes",
+    "color": "#10B981",
+    "category": "Personal",
+    "isDone": true
+  },
+  {
+    "id": "11",
+    "name": "Buy groceries",
+    "color": "#F59E0B",
+    "category": "Errands",
+    "isDone": false
+  },
+  {
+    "id": "12",
+    "name": "Pay electric bill",
+    "color": "#F59E0B",
+    "category": "Errands",
+    "isDone": true
+  },
+  {
+    "id": "13",
+    "name": "Pick up dry cleaning",
+    "color": "#F59E0B",
+    "category": "Errands",
+    "isDone": false
+  },
+  {
+    "id": "14",
+    "name": "Gas up the car",
+    "color": "#F59E0B",
+    "category": "Errands",
+    "isDone": true
+  },
+  {
+    "id": "15",
+    "name": "Visit post office",
+    "color": "#F59E0B",
+    "category": "Errands",
+    "isDone": false
+  },
+  {
+    "id": "16",
+    "name": "Send invoice",
+    "color": "#3B82F6",
+    "category": "Work",
+    "isDone": false
+  },
+  {
+    "id": "17",
+    "name": "Prepare presentation slides",
+    "color": "#3B82F6",
+    "category": "Work",
+    "isDone": false
+  },
+  {
+    "id": "18",
+    "name": "Learn new framework",
+    "color": "#10B981",
+    "category": "Personal",
+    "isDone": false
+  },
+  {
+    "id": "19",
+    "name": "Fix garage door",
+    "color": "#F59E0B",
+    "category": "Errands",
+    "isDone": false
+  },
+  {
+    "id": "20",
+    "name": "Reply to emails",
+    "color": "#3B82F6",
+    "category": "Work",
+    "isDone": true
+  }
+]
