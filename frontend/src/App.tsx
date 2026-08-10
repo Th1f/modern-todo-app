@@ -1,11 +1,16 @@
-import Categories from "./_components/Categories/Categories";
+import { useState } from "react";
+import { Content } from "./_components/Content/Content";
 import { Header } from "./_components/Header/Header";
 import "./App.css";
+import { TaskProvider } from "./context/TaskProvider";
 
 function App() {
   return (
     <>
-      <Header />
+      <TaskProvider>
+        <Header />
+        <Content />
+      </TaskProvider>
     </>
   );
 }
