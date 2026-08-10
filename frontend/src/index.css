@@ -1,0 +1,19 @@
+@import "tailwindcss";
+@import url('https://googleapis.com');
+
+
+@theme{
+  --p-font:'Instrument Serif', serif;
+  --s-font:'Archivo', sans-serif;
+  --color-accent:#C14B2A;
+  --color-muted:#5C5546;
+  --color-work:#C14B2A;
+  --color-personal:#3D6B54;
+  --color-errands:#8C6D2F;
+}
+
+html{
+  background-color: #F5F1E8;
+  font-family: var(--p-font);
+  padding:7dvh 6dvh;
+}
