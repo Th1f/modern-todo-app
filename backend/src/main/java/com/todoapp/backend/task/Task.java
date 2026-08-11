@@ -1,7 +1,10 @@
 package com.todoapp.backend.task;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.todoapp.backend.category.Category;
+import com.todoapp.backend.user.User;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -32,6 +35,11 @@ public class Task {
     @ManyToOne(optional = false)
     @JoinColumn(name = "category_id", nullable = false)
     private Category category;
+
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "owner_id", nullable = false)
+    @JsonIgnore
+    private User owner;
 
     // Named `done` so Lombok's isDone()/setDone() pair up with it as ONE Jackson
     // property; @JsonProperty then renames that single property for the API.
