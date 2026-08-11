@@ -84,7 +84,7 @@ export default function Categories() {
 
   return (
     <>
-      <div className="flex border border-gray-400 border-t-0 border-x-0 justify-between overflow-y-auto">
+      <div className="flex flex-col  border border-gray-400 border-t-0 border-x-0 justify-between overflow-y-auto sm:flex-row">
         <div className="flex gap-2 items-center">
           <span
             className={tabClass(selectedCategory === "all")}

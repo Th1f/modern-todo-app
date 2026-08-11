@@ -4,8 +4,8 @@ import { Tasks } from "./Tasks/Tasks";
 
 export function Content() {
   return (
-    <div className="flex gap-10">
-      <div className="flex flex-col w-2/3">
+    <div className="flex flex-col gap-10 sm:flex-row">
+      <div className="flex flex-col sm:w-2/3 w-full">
         <NewTask />
         <Tasks />
       </div>
