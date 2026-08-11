@@ -13,13 +13,17 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Profile;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 
+// Dev only: this creates a demo/demopassword account, which must never
+// exist on a public deployment. Railway runs with SPRING_PROFILES_ACTIVE=prod.
 @Component
+@Profile("dev")
 public class DataSeeder implements CommandLineRunner {
 
    
