@@ -1,6 +1,13 @@
-import { useState, type ChangeEvent } from "react";
+import { useState, type ChangeEvent, type SubmitEvent } from "react";
+import { ApiError } from "../../api/client";
+import { useTasks } from "../../context/TaskProvider";
+
+//Matches Hex Colors
+const HEX_PATTERN = /^#(?:[0-9a-f]{3}){1,2}$/i;
 
 export function NewCategory() {
+  const { addCategory } = useTasks();
+
   const colors = [
     "#C14B2A",
     "#3D6B54",
@@ -13,13 +20,41 @@ export function NewCategory() {
   const [categoryName, setCategoryName] = useState<string>("");
   const [selectedColor, setSelectedColor] = useState<string>(colors[0]);
   const [hexColor, setHexColor] = useState<string>("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.SyntheticEvent<HTMLFormElement>): void => {
+  const typedHex = hexColor.trim();
+  const hexIsUsable = typedHex === "" || HEX_PATTERN.test(typedHex);
+  const color = HEX_PATTERN.test(typedHex) ? typedHex : selectedColor;
+
+  const handleSubmit = async (
+    e: SubmitEvent<HTMLFormElement>,
+  ): Promise<void> => {
     e.preventDefault();
-    console.log({ categoryName, selectedColor, hexColor });
-    setCategoryName("");
-    setSelectedColor(colors[0]);
-    setHexColor("");
+    const name = categoryName.trim();
+    if (!name) return;
+
+    if (!hexIsUsable) {
+      setError("Use a hex colour like #3B82F6");
+      return;
+    }
+
+    setSaving(true);
+    setError(null);
+    try {
+      await addCategory({ name, color });
+      setCategoryName("");
+      setSelectedColor(colors[0]);
+      setHexColor("");
+    } catch (err) {
+      setError(
+        err instanceof ApiError && err.status === 409
+          ? `"${name}" already exists`
+          : "Could not save that category",
+      );
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleCategoryChange = (e: ChangeEvent<HTMLInputElement>): void => {
@@ -28,10 +63,11 @@ export function NewCategory() {
 
   const handleHexChange = (e: ChangeEvent<HTMLInputElement>): void => {
     setHexColor(e.target.value);
+    setError(null);
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex gap-1">
+    <form onSubmit={handleSubmit} className="flex gap-1 relative">
       <input
         type="text"
         value={categoryName}
@@ -41,19 +77,20 @@ export function NewCategory() {
         required
       />
       <div className="flex gap-1 self-center">
-        {colors.map((color) => (
+        {colors.map((swatch) => (
           <button
-            key={color}
+            key={swatch}
             type="button"
             className={`rounded-full w-5 h-5  ${
-              selectedColor === color ? "ring-2 ring-offset-1" : ""
+              color === swatch ? "ring-2 ring-offset-1" : ""
             }`}
-            style={{ backgroundColor: color }}
+            style={{ backgroundColor: swatch }}
             onClick={() => {
-              setSelectedColor(color);
-              setHexColor(color);
+              setSelectedColor(swatch);
+              setHexColor("");
+              setError(null);
             }}
-            aria-label={`Select ${color}`}
+            aria-label={`Select ${swatch}`}
           />
         ))}
       </div>
@@ -61,15 +98,24 @@ export function NewCategory() {
         type="text"
         value={hexColor}
         onChange={handleHexChange}
-        className="m-1 focus:outline-0 w-16 border-b border-gray-400"
+        className={`m-1 focus:outline-0 w-16 border-b ${
+          hexIsUsable ? "border-gray-400" : "border-red-500 text-red-600"
+        }`}
         placeholder="#hex"
+        aria-invalid={!hexIsUsable}
       />
       <button
         type="submit"
-        className="w-6 h-6 self-center text-center border rounded-full hover:bg-black hover:text-white hover:cursor-pointer"
+        disabled={saving}
+        className="w-6 h-6 self-center text-center border rounded-full hover:bg-black hover:text-white hover:cursor-pointer disabled:opacity-40"
       >
         +
       </button>
+      {error && (
+        <span className="absolute top-full right-0 text-xs text-red-600 whitespace-nowrap">
+          {error}
+        </span>
+      )}
     </form>
   );
 }

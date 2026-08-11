@@ -1,0 +1,22 @@
+[
+  { "name": "Complete project report", "category": "Work", "isDone": false },
+  { "name": "Review code changes", "category": "Work", "isDone": true },
+  { "name": "Schedule team meeting", "category": "Work", "isDone": false },
+  { "name": "Update documentation", "category": "Work", "isDone": true },
+  { "name": "Fix bug in login", "category": "Work", "isDone": false },
+  { "name": "Send invoice", "category": "Work", "isDone": false },
+  { "name": "Prepare presentation slides", "category": "Work", "isDone": false },
+  { "name": "Reply to emails", "category": "Work", "isDone": true },
+  { "name": "Call dentist", "category": "Personal", "isDone": false },
+  { "name": "Workout at gym", "category": "Personal", "isDone": true },
+  { "name": "Read book chapter", "category": "Personal", "isDone": false },
+  { "name": "Plan weekend trip", "category": "Personal", "isDone": false },
+  { "name": "Meditate for 20 minutes", "category": "Personal", "isDone": true },
+  { "name": "Learn new framework", "category": "Personal", "isDone": false },
+  { "name": "Buy groceries", "category": "Errands", "isDone": false },
+  { "name": "Pay electric bill", "category": "Errands", "isDone": true },
+  { "name": "Pick up dry cleaning", "category": "Errands", "isDone": false },
+  { "name": "Gas up the car", "category": "Errands", "isDone": true },
+  { "name": "Visit post office", "category": "Errands", "isDone": false },
+  { "name": "Fix garage door", "category": "Errands", "isDone": false }
+]

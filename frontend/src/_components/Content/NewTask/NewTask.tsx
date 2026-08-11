@@ -1,40 +1,66 @@
-import { useState, type ChangeEvent } from "react";
+import { useEffect, useState, type ChangeEvent, type SubmitEvent } from "react";
+import { useTasks } from "../../../context/TaskProvider";
 
 export function NewTask() {
-  const options = ["Work", "Personal", "Errands"];
-  const [selected, setSelected] = useState<string>("");
+  const { categories, addTask } = useTasks();
+  const [categoryId, setCategoryId] = useState<number | "">("");
   const [taskName, setTaskName] = useState<string>("");
+  const [saving, setSaving] = useState(false);
 
-  const handleSubmit = (e: React.SyntheticEvent<HTMLFormElement>) => {
+  useEffect(() => {
+    if (categoryId === "" && categories.length > 0) {
+      setCategoryId(categories[0].id);
+    }
+  }, [categories, categoryId]);
+
+  const handleSubmit = async (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log(selected,taskName)
+    if (!taskName.trim() || categoryId === "") return;
+
+    setSaving(true);
+    try {
+      await addTask({
+        name: taskName.trim(),
+        categoryId,
+        isDone: false,
+      });
+      setTaskName("");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleTaskNameChange = (e: ChangeEvent<HTMLInputElement>) => {
     setTaskName(e.target.value);
   };
+
   return (
     <form onSubmit={handleSubmit} className="flex gap-3 my-10 w-full">
       <input
         type="text"
         className=" focus:outline-0 w-3/4 border-b-2 border-black  text-xl "
+        value={taskName}
         onChange={handleTaskNameChange}
         placeholder="Write a new task..."
         required
       />
       <select
-        value={selected}
-        onChange={(e) => setSelected(e.target.value)}
+        value={categoryId}
+        onChange={(e) => setCategoryId(Number(e.target.value))}
         className="border-b border-gray-400 text-muted"
       >
-        {options.map((opt) => (
-          <option key={opt.toLowerCase()} value={opt.toLowerCase()}>
-            {opt}
+        {categories.map((category) => (
+          <option key={category.id} value={category.id}>
+            {category.name}
           </option>
         ))}
       </select>
-      <button type="submit" className="bg-accent px-5 py-2 text-white text-sm">
-        ADD
+      <button
+        type="submit"
+        disabled={saving || categoryId === ""}
+        className="bg-accent px-5 py-2 text-white text-sm disabled:opacity-50"
+      >
+        {saving ? "..." : "ADD"}
       </button>
     </form>
   );

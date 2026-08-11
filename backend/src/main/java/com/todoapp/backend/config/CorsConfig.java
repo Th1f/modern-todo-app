@@ -5,10 +5,6 @@ import org.springframework.lang.NonNull;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-/**
- * The browser refuses cross-origin requests unless the server opts in, and the
- * Vite dev server (5173) is a different origin from Spring Boot (8080).
- */
 @Configuration
 public class CorsConfig implements WebMvcConfigurer {
 
