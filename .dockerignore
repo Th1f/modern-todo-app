@@ -1,0 +1,13 @@
+# Keeps the build context small and, more importantly, stops the host's
+# node_modules (Windows binaries) from overwriting the Linux ones that
+# `npm ci` installs inside the image.
+**/node_modules
+**/target
+**/dist
+
+.git
+.github
+.vscode
+.claude
+.dist
+*.md
