@@ -76,7 +76,7 @@ export function Login() {
               />
             </div>
             <div className="flex flex-col">
-              <label htmlFor="pasword" className="w-full text-l text-muted">
+              <label htmlFor="password" className="w-full text-l text-muted">
                 Password
               </label>
               <input
@@ -89,11 +89,11 @@ export function Login() {
               />
             </div>
             <div className="flex flex-col">
-              <label htmlFor="pasword" className="w-full text-l text-muted">
+              <label htmlFor="confirmPassword" className="w-full text-l text-muted">
                 Confirm password
               </label>
               <input
-                id="password"
+                id="confirmPassword"
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
@@ -145,7 +145,7 @@ export function Login() {
               />
             </div>
             <div className="flex flex-col">
-              <label htmlFor="pasword" className="w-full text-l text-muted">
+              <label htmlFor="password" className="w-full text-l text-muted">
                 Password
               </label>
               <input

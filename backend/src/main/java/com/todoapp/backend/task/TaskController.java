@@ -1,9 +1,9 @@
 package com.todoapp.backend.task;
 
+import com.todoapp.backend.category.Category;
 import com.todoapp.backend.category.CategoryRepository;
 import com.todoapp.backend.user.User;
 import com.todoapp.backend.user.UserRepository;
-
 import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -19,7 +19,9 @@ public class TaskController {
     private final CategoryRepository categoryRepository;
     private final UserRepository userRepository;
 
-    public TaskController(TaskRepository repository, CategoryRepository categoryRepository,
+    public TaskController(
+            TaskRepository repository,
+            CategoryRepository categoryRepository,
             UserRepository userRepository) {
         this.repository = repository;
         this.categoryRepository = categoryRepository;
@@ -36,22 +38,28 @@ public class TaskController {
     @PostMapping
     public ResponseEntity<Task> create(@Valid @RequestBody TaskRequest request, Authentication auth) {
         User owner = userRepository.findByUsername(auth.getName()).orElse(null);
-        return categoryRepository
-                .findById(request.categoryId())
-                .map(category -> {
-                    Task task = new Task();
-                    task.setName(request.name());
-                    task.setCategory(category);
-                    task.setDone(request.isDone());
-                    task.setOwner(owner);
-                    return ResponseEntity.status(HttpStatus.CREATED).body(repository.save(task));
-                })
-                .orElseGet(() -> ResponseEntity.badRequest().build());
+        if (owner == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        Category category =
+                categoryRepository.findByIdAndOwnerUsername(request.categoryId(), auth.getName())
+                        .orElse(null);
+        if (category == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        Task task = new Task();
+        task.setName(request.name());
+        task.setCategory(category);
+        task.setDone(request.isDone());
+        task.setOwner(owner);
+        return ResponseEntity.status(HttpStatus.CREATED).body(repository.save(task));
     }
 
     @PatchMapping("/{id}")
     public ResponseEntity<Task> update(
             @PathVariable Long id, @RequestBody TaskUpdate update, Authentication auth) {
+
         Task task = repository.findByIdAndOwnerUsername(id, auth.getName()).orElse(null);
         if (task == null) {
             return ResponseEntity.notFound().build();
@@ -66,7 +74,9 @@ public class TaskController {
         }
 
         if (update.categoryId() != null) {
-            var category = categoryRepository.findById(update.categoryId()).orElse(null);
+            Category category =
+                    categoryRepository.findByIdAndOwnerUsername(update.categoryId(), auth.getName())
+                            .orElse(null);
             if (category == null) {
                 return ResponseEntity.badRequest().build();
             }
