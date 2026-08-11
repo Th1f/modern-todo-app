@@ -66,7 +66,7 @@ export function Tasks() {
         );
 
   if (visibleTasks.length === 0) {
-    return <div className="text-muted py-4">Nothing here yet...</div>;
+    return <div className="text-muted py-4 italic text-center">Nothing here yet...</div>;
   }
 
   return (

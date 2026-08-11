@@ -38,7 +38,7 @@ export function NewTask() {
     <form onSubmit={handleSubmit} className="flex gap-3 my-10 w-full">
       <input
         type="text"
-        className=" focus:outline-0 w-3/4 border-b-2 border-black  text-xl "
+        className=" focus:outline-0 w-full border-b-2 border-black  text-xl "
         value={taskName}
         onChange={handleTaskNameChange}
         placeholder="Write a new task..."

@@ -10,11 +10,9 @@ export class ApiError extends Error {
   }
 }
 
-export async function request<T>(
-  path: string,
-  init?: RequestInit,
-): Promise<T> {
+export async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_URL}${path}`, {
+    credentials: "include",
     headers: { "Content-Type": "application/json" },
     ...init,
   });
@@ -25,5 +23,11 @@ export async function request<T>(
       response.status,
     );
   }
-  return response.status === 204 ? (undefined as T) : response.json();
+  if (
+    response.status === 204 ||
+    response.headers.get("content-length") === "0"
+  ) {
+    return undefined as T;
+  }
+  return response.json();
 }

@@ -16,4 +16,5 @@ html{
   background-color: #F5F1E8;
   font-family: var(--p-font);
   padding:7dvh 6dvh;
+  min-height: 100dvh;
 }
