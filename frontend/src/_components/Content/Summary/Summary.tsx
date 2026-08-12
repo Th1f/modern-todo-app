@@ -1,4 +1,4 @@
-import { useTasks } from "../../../context/TaskProvider";
+import { useTasks } from "../../../context/TaskContext";
 import { SummarySkeleton } from "./SummarySkeleton";
 
 export function Summary() {

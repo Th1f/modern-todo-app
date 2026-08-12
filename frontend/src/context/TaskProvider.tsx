@@ -1,54 +1,13 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
-  type Dispatch,
-  type ReactNode,
-  type SetStateAction,
-} from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import * as categoriesApi from "../api/categories";
 import * as tasksApi from "../api/tasks";
-import type { Category, NewCategoryInput } from "../api/categories";
+import type { NewCategoryInput, Category } from "../api/categories";
 import type { NewTaskInput, Task } from "../api/tasks";
-
-type TaskContextType = {
-  tasks: Task[];
-  categories: Category[];
-  loading: boolean;
-  error: string | null;
-  selectedCategory: string;
-  setSelectedCategory: Dispatch<SetStateAction<string>>;
-  //Create Operations
-  addTask: (input: NewTaskInput) => Promise<void>;
-  addCategory: (input: NewCategoryInput) => Promise<void>;
-
-  //Update Operations
-  toggleTask: (id: number) => Promise<void>;
-  renameTask: (id: number, name: string) => Promise<void>;
-  removeTask: (id: number) => Promise<void>;
-
-  //Delete Operations
-  renameCategory: (id: number, name: string) => Promise<void>;
-  removeCategory: (id: number) => Promise<void>;
-};
+import { TaskContext } from "./TaskContext";
 
 type TaskProviderProps = {
   children: ReactNode;
 };
-
-export const TaskContext = createContext<TaskContextType | undefined>(
-  undefined,
-);
-
-export function useTasks() {
-  const context = useContext(TaskContext);
-  if (!context) {
-    throw new Error("useTasks must be used inside a <TaskProvider>");
-  }
-  return context;
-}
 
 export function TaskProvider({ children }: TaskProviderProps) {
   const [tasks, setTasks] = useState<Task[]>([]);

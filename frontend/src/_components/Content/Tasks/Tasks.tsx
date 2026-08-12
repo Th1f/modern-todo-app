@@ -1,5 +1,5 @@
 import { useRef, useState, type KeyboardEvent } from "react";
-import { useTasks } from "../../../context/TaskProvider";
+import { useTasks } from "../../../context/TaskContext";
 import { TasksSkeleton } from "./TasksSkeleton";
 
 export function Tasks() {

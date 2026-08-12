@@ -8,7 +8,7 @@ const signIn = vi.fn().mockResolvedValue(undefined);
 const register = vi.fn().mockResolvedValue(undefined);
 const signOut = vi.fn().mockResolvedValue(undefined);
 
-vi.mock("../../context/AuthProvider", () => ({
+vi.mock("../../context/AuthContext", () => ({
   useAuth: () => ({ user: null, loading: false, signIn, register, signOut }),
 }));
 

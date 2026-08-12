@@ -1,17 +1,16 @@
-import { useEffect, useState, type ChangeEvent, type SubmitEvent } from "react";
-import { useTasks } from "../../../context/TaskProvider";
+import { useState, type ChangeEvent, type SubmitEvent } from "react";
+import { useTasks } from "../../../context/TaskContext";
 
 export function NewTask() {
   const { categories, addTask } = useTasks();
-  const [categoryId, setCategoryId] = useState<number | "">("");
+  const [chosenId, setChosenId] = useState<number | "">("");
   const [taskName, setTaskName] = useState<string>("");
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    if (categoryId === "" && categories.length > 0) {
-      setCategoryId(categories[0].id);
-    }
-  }, [categories, categoryId]);
+  // Derived rather than synced in an effect: until the user picks something,
+  // the first category is the selection.
+  const fallbackId: number | "" = categories.length > 0 ? categories[0].id : "";
+  const categoryId: number | "" = chosenId === "" ? fallbackId : chosenId;
 
   const handleSubmit = async (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -46,7 +45,7 @@ export function NewTask() {
       />
       <select
         value={categoryId}
-        onChange={(e) => setCategoryId(Number(e.target.value))}
+        onChange={(e) => setChosenId(Number(e.target.value))}
         className="border-b border-gray-400 text-muted"
       >
         {categories.map((category) => (

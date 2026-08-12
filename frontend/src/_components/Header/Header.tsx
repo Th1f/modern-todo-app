@@ -1,6 +1,6 @@
 import Categories from "../Categories/Categories";
-import { useTasks } from "../../context/TaskProvider";
-import { useAuth } from "../../context/AuthProvider";
+import { useTasks } from "../../context/TaskContext";
+import { useAuth } from "../../context/AuthContext";
 import { Skeleton } from "../ui/Skeleton";
 
 export function Header() {

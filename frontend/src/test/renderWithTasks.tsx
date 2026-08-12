@@ -3,7 +3,7 @@ import type { ContextType, ReactElement } from "react";
 import { vi } from "vitest";
 import type { Category } from "../api/categories";
 import type { Task } from "../api/tasks";
-import { TaskContext } from "../context/TaskProvider";
+import { TaskContext } from "../context/TaskContext";
 
 export type TaskContextValue = NonNullable<ContextType<typeof TaskContext>>;
 

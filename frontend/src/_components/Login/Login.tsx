@@ -1,5 +1,5 @@
 import { useState, type SubmitEvent } from "react";
-import { useAuth } from "../../context/AuthProvider";
+import { useAuth } from "../../context/AuthContext";
 import { ApiError } from "../../api/client";
 
 export function Login() {

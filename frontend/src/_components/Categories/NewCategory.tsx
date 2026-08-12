@@ -1,6 +1,6 @@
 import { useState, type ChangeEvent, type SubmitEvent } from "react";
 import { ApiError } from "../../api/client";
-import { useTasks } from "../../context/TaskProvider";
+import { useTasks } from "../../context/TaskContext";
 
 //Matches Hex Colors
 const HEX_PATTERN = /^#(?:[0-9a-f]{3}){1,2}$/i;

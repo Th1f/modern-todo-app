@@ -2,7 +2,7 @@ import { useRef, useState, type KeyboardEvent } from "react";
 import { NewCategory } from "./NewCategory";
 import { CategoriesSkeleton } from "./CategoriesSkeleton";
 import { ApiError } from "../../api/client";
-import { useTasks } from "../../context/TaskProvider";
+import { useTasks } from "../../context/TaskContext";
 
 export default function Categories() {
   const {

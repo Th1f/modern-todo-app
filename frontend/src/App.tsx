@@ -3,7 +3,7 @@ import { Header } from "./_components/Header/Header";
 import { Login } from "./_components/Login/Login";
 import "./App.css";
 import { PageSkeleton } from "./_components/ui/PageSkeleton";
-import { useAuth } from "./context/AuthProvider";
+import { useAuth } from "./context/AuthContext";
 import { TaskProvider } from "./context/TaskProvider";
 
 function App() {
