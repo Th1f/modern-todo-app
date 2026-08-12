@@ -1,6 +1,6 @@
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { personal, renderWithTasks, work } from "../../../test/renderWithTasks";
 import { NewTask } from "./NewTask";
 
