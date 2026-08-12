@@ -28,8 +28,10 @@ export async function logout(): Promise<void> {
 
 export const getCurrentUser = () => request<CurrentUser>("/me");
 
-export const register = (username: string, password: string) =>
-  request<void>("/register", {
+export const register = (username: string, password: string) => {
+  const lower = username.toLowerCase();
+  return request<void>("/register", {
     method: "POST",
-    body: JSON.stringify({ username, password }),
+    body: JSON.stringify({ username: lower, password }),
   });
+};
