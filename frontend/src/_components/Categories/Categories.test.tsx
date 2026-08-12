@@ -15,6 +15,15 @@ afterEach(() => {
 });
 
 describe("tabs", () => {
+  it("shows a skeleton while loading", () => {
+    renderWithTasks(<Categories />, { loading: true, categories: [work] });
+
+    expect(screen.getByRole("status")).toBeInTheDocument();
+    expect(screen.getByText("Loading categories…")).toBeInTheDocument();
+    expect(screen.queryByText("All")).not.toBeInTheDocument();
+    expect(screen.queryByPlaceholderText("New category")).not.toBeInTheDocument();
+  });
+
   it("renders All plus every category", () => {
     renderWithTasks(<Categories />, { categories: [work, personal] });
 

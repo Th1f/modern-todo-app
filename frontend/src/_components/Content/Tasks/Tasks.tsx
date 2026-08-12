@@ -1,5 +1,6 @@
 import { useRef, useState, type KeyboardEvent } from "react";
 import { useTasks } from "../../../context/TaskProvider";
+import { TasksSkeleton } from "./TasksSkeleton";
 
 export function Tasks() {
   const {
@@ -43,7 +44,7 @@ export function Tasks() {
   };
 
   if (loading) {
-    return <div className="text-muted py-4">Loading tasks…</div>;
+    return <TasksSkeleton />;
   }
 
   if (error) {

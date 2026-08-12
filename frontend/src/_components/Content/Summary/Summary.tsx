@@ -1,7 +1,12 @@
 import { useTasks } from "../../../context/TaskProvider";
+import { SummarySkeleton } from "./SummarySkeleton";
 
 export function Summary() {
-  const { tasks, categories } = useTasks();
+  const { tasks, categories, loading } = useTasks();
+
+  if (loading) {
+    return <SummarySkeleton />;
+  }
 
   //Find Categories and its amount of completed and total jobs
   const rows = categories.map((category) => {

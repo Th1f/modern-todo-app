@@ -1,5 +1,6 @@
 import { useRef, useState, type KeyboardEvent } from "react";
 import { NewCategory } from "./NewCategory";
+import { CategoriesSkeleton } from "./CategoriesSkeleton";
 import { ApiError } from "../../api/client";
 import { useTasks } from "../../context/TaskProvider";
 
@@ -7,6 +8,7 @@ export default function Categories() {
   const {
     categories,
     tasks,
+    loading,
     selectedCategory,
     setSelectedCategory,
     renameCategory,
@@ -75,6 +77,10 @@ export default function Categories() {
       );
     }
   };
+
+  if (loading) {
+    return <CategoriesSkeleton />;
+  }
 
   const tabClass = (isSelected: boolean) =>
     "flex items-center py-2 px-3 hover:text-black hover:cursor-pointer hover:border-b hover:border-b-accent border-0 " +

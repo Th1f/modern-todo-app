@@ -10,6 +10,14 @@ import {
 import { Summary } from "./Summary";
 
 describe("Summary", () => {
+  it("shows a skeleton while loading", () => {
+    renderWithTasks(<Summary />, { loading: true, categories: [work] });
+
+    expect(screen.getByRole("status")).toBeInTheDocument();
+    expect(screen.getByText("Loading summary…")).toBeInTheDocument();
+    expect(screen.queryByText("Work")).not.toBeInTheDocument();
+  });
+
   it("lists a row per category", () => {
     renderWithTasks(<Summary />, { categories: [work, personal, errands] });
 

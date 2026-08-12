@@ -14,10 +14,18 @@ afterEach(() => {
 });
 
 describe("states", () => {
-  it("shows a loading message", () => {
+  it("shows a skeleton while loading", () => {
     renderWithTasks(<Tasks />, { loading: true });
 
+    expect(screen.getByRole("status")).toBeInTheDocument();
     expect(screen.getByText("Loading tasks…")).toBeInTheDocument();
+    expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
+  });
+
+  it("prefers the skeleton over the empty state while loading", () => {
+    renderWithTasks(<Tasks />, { loading: true, tasks: [] });
+
+    expect(screen.queryByText("Nothing here yet...")).not.toBeInTheDocument();
   });
 
   it("shows the error instead of the list", () => {
