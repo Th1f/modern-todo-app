@@ -1,6 +1,7 @@
 package com.todoapp.backend.task;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -12,42 +13,48 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.todoapp.backend.category.Category;
-import com.todoapp.backend.category.CategoryRepository;
 import com.todoapp.backend.config.SecurityBeans;
 import com.todoapp.backend.config.SecurityConfig;
+import com.todoapp.backend.error.ApiExceptionHandler;
+import com.todoapp.backend.error.ConflictException;
+import com.todoapp.backend.error.InvalidRequestException;
+import com.todoapp.backend.error.NotAuthenticatedException;
+import com.todoapp.backend.error.NotFoundException;
 import com.todoapp.backend.user.User;
 import com.todoapp.backend.user.UserRepository;
 
-import org.springframework.http.MediaType;
-
+/**
+ * The HTTP contract only: routing, status codes, and serialisation. Business
+ * rules live in TaskServiceTest.
+ */
 @WebMvcTest(TaskController.class)
-@Import({ SecurityConfig.class, SecurityBeans.class })
+@Import({ SecurityConfig.class, SecurityBeans.class, ApiExceptionHandler.class })
 class TaskControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
     @MockitoBean
-    private TaskRepository taskRepository;
-    @MockitoBean
-    private CategoryRepository categoryRepository;
+    private TaskService taskService;
+
+    // Required by SecurityBeans' UserDetailsService, not by the controller.
     @MockitoBean
     private UserRepository userRepository;
 
-    private Task taskOwnedBy(String username, long id, String name) {
+    private Task task(long id, String name) {
         User owner = new User();
-        owner.setUsername(username);
+        owner.setUsername("alice");
 
         Category category = new Category();
         category.setId(1L);
@@ -66,50 +73,99 @@ class TaskControllerTest {
     @Test
     void anonymousRequestsAreRejected() throws Exception {
         mockMvc.perform(get("/api/tasks")).andExpect(status().isUnauthorized());
+
+        verify(taskService, never()).listFor(any(), any());
     }
 
     @Test
     @WithMockUser("alice")
-    void listReturnsOnlyCallersTasks() throws Exception {
-        when(taskRepository.findByOwnerUsername("alice"))
-                .thenReturn(List.of(taskOwnedBy("alice", 1L, "Alice private")));
+    void listPassesTheSessionUsernameAndNoFilter() throws Exception {
+        when(taskService.listFor("alice", null)).thenReturn(List.of(task(1L, "Buy milk")));
 
         mockMvc.perform(get("/api/tasks"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].name").value("Alice private"))
-                .andExpect(jsonPath("$[0].isDone").exists());
+                .andExpect(jsonPath("$[0].name").value("Buy milk"))
+                .andExpect(jsonPath("$[0].isDone").value(false))
+                .andExpect(jsonPath("$[0].owner").doesNotExist());
     }
 
     @Test
     @WithMockUser("alice")
-    void createCallersTask() throws Exception {
-        User alice = new User();
-        alice.setUsername("alice");
+    void listForwardsTheCategoryParam() throws Exception {
+        when(taskService.listFor("alice", "Work")).thenReturn(List.of(task(1L, "Buy milk")));
 
-        Category work = new Category();
-        work.setId(1L);
-        work.setName("Work");
-        work.setColor("#3B82F6");
-        work.setOwner(alice);
+        mockMvc.perform(get("/api/tasks").param("category", "Work"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1));
 
-        when(userRepository.findByUsername("alice")).thenReturn(Optional.of(alice));
-        when(categoryRepository.findByIdAndOwnerUsername(1L, "alice")).thenReturn(Optional.of(work));
-        when(taskRepository.save(any(Task.class))).thenAnswer(call -> call.getArgument(0));
+        verify(taskService).listFor("alice", "Work");
+    }
+
+    @Test
+    @WithMockUser("alice")
+    void createReturns201() throws Exception {
+        when(taskService.create(eq("alice"), any(TaskRequest.class)))
+                .thenReturn(task(1L, "Buy milk"));
 
         mockMvc.perform(post("/api/tasks")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"name\":\"Buy milk\",\"categoryId\":1,\"isDone\":false}"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.name").value("Buy milk"));
-
     }
 
     @Test
     @WithMockUser("alice")
-    void updateCallersTask() throws Exception {
-        Task task = taskOwnedBy("alice", 1L, "Alice private");
-        when(taskRepository.findByIdAndOwnerUsername(1L, "alice")).thenReturn(Optional.of(task));
-        when(taskRepository.save(any(Task.class))).thenAnswer(call -> call.getArgument(0));
+    void createRejectsBlankNameBeforeReachingTheService() throws Exception {
+        mockMvc.perform(post("/api/tasks")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\":\"   \",\"categoryId\":1,\"isDone\":false}"))
+                .andExpect(status().isBadRequest());
+
+        verify(taskService, never()).create(any(), any());
+    }
+
+    @Test
+    @WithMockUser("ghost")
+    void notAuthenticatedBecomes401() throws Exception {
+        when(taskService.create(eq("ghost"), any(TaskRequest.class)))
+                .thenThrow(new NotAuthenticatedException("ghost"));
+
+        mockMvc.perform(post("/api/tasks")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\":\"Buy milk\",\"categoryId\":1,\"isDone\":false}"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithMockUser("alice")
+    void invalidRequestBecomes400() throws Exception {
+        when(taskService.create(eq("alice"), any(TaskRequest.class)))
+                .thenThrow(new InvalidRequestException("Category 99 is not yours"));
+
+        mockMvc.perform(post("/api/tasks")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\":\"Sneaky\",\"categoryId\":99,\"isDone\":false}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser("alice")
+    void conflictBecomes409() throws Exception {
+        when(taskService.update(eq("alice"), eq(1L), any(TaskUpdate.class)))
+                .thenThrow(new ConflictException("clash"));
+
+        mockMvc.perform(patch("/api/tasks/{id}", 1L)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\":\"Renamed\"}"))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    @WithMockUser("alice")
+    void updateReturnsTheUpdatedTask() throws Exception {
+        when(taskService.update(eq("alice"), eq(1L), any(TaskUpdate.class)))
+                .thenReturn(task(1L, "Renamed"));
 
         mockMvc.perform(patch("/api/tasks/{id}", 1L)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -119,11 +175,23 @@ class TaskControllerTest {
     }
 
     @Test
+    @WithMockUser("john")
+    void notFoundBecomes404() throws Exception {
+        when(taskService.update(eq("john"), eq(1L), any(TaskUpdate.class)))
+                .thenThrow(new NotFoundException("Task 1"));
+
+        mockMvc.perform(patch("/api/tasks/{id}", 1L)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\":\"Stolen\"}"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
     @WithMockUser("alice")
-    void toggleCallersTask() throws Exception {
-        Task task = taskOwnedBy("alice", 1L, "Alice Private");
-        when(taskRepository.findByIdAndOwnerUsername(1L, "alice")).thenReturn(Optional.of(task));
-        when(taskRepository.save(any(Task.class))).thenAnswer(call -> call.getArgument(0));
+    void toggleReturnsTheTask() throws Exception {
+        Task toggled = task(1L, "Buy milk");
+        toggled.setDone(true);
+        when(taskService.toggle("alice", 1L)).thenReturn(toggled);
 
         mockMvc.perform(patch("/api/tasks/{id}/toggle", 1L))
                 .andExpect(status().isOk())
@@ -132,264 +200,9 @@ class TaskControllerTest {
 
     @Test
     @WithMockUser("alice")
-    void deleteCallersTask() throws Exception {
-        Task task = taskOwnedBy("alice", 1L, "Alice Private");
-        when(taskRepository.findByIdAndOwnerUsername(1L, "alice")).thenReturn(Optional.of(task));
-
+    void deleteReturns204() throws Exception {
         mockMvc.perform(delete("/api/tasks/{id}", 1L)).andExpect(status().isNoContent());
 
-        // 204 has no body, so this is the only assertion that the row was actually removed.
-        verify(taskRepository).delete(task);
+        verify(taskService).delete("alice", 1L);
     }
-
-    @Test
-    @WithMockUser("john")
-    void cannotUpdateAnotherUsersTask() throws Exception {
-        Task aliceTask = taskOwnedBy("alice", 1L, "Alice private");
-        when(taskRepository.findById(1L)).thenReturn(Optional.of(aliceTask));
-
-        mockMvc.perform(patch("/api/tasks/{id}", 1L)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"name\":\"stolen\"}")).andExpect(status().isNotFound());
-    }
-
-    @Test
-    @WithMockUser("john")
-    void cannotDeleteAnotherUsersTask() throws Exception {
-        Task task = taskOwnedBy("alice", 1L, "Alice Private");
-        when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
-
-        mockMvc.perform(delete("/api/tasks/{id}", 1L)).andExpect(status().isNotFound());
-
-        verify(taskRepository, never()).delete(any(Task.class));
-    }
-
-    @Test
-    @WithMockUser("john")
-    void listDoesNotLeakAnotherUsersTasks() throws Exception {
-        Task aliceTask = taskOwnedBy("alice", 1L, "Alice private");
-        when(taskRepository.findByOwnerUsername("alice")).thenReturn(List.of(aliceTask));
-        when(taskRepository.findAll()).thenReturn(List.of(aliceTask));
-
-        mockMvc.perform(get("/api/tasks"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$.length()").value(0));
-    }
-
-    @Test
-    @WithMockUser("alice")
-    void createRejectsBlankName() throws Exception {
-        mockMvc.perform(post("/api/tasks")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"name\":\"   \",\"categoryId\":1,\"isDone\":false}"))
-                .andExpect(status().isBadRequest());
-
-        verify(taskRepository, never()).save(any(Task.class));
-    }
-
-    @Test
-    @WithMockUser("alice")
-    void updateRejectsBlankName() throws Exception {
-        Task task = taskOwnedBy("alice", 1L, "Alice private");
-        when(taskRepository.findByIdAndOwnerUsername(1L, "alice")).thenReturn(Optional.of(task));
-
-        mockMvc.perform(patch("/api/tasks/{id}", 1L)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"name\":\"   \"}"))
-                .andExpect(status().isBadRequest());
-
-        verify(taskRepository, never()).save(any(Task.class));
-    }
-
-    @Test
-    @WithMockUser("alice")
-    void cannotFileTaskUnderAnotherUsersCategory() throws Exception {
-        User alice = new User();
-        alice.setUsername("alice");
-
-        User bob = new User();
-        bob.setUsername("bob");
-
-        Category bobsCategory = new Category();
-        bobsCategory.setId(99L);
-        bobsCategory.setName("Bob secret");
-        bobsCategory.setColor("#EF4444");
-        bobsCategory.setOwner(bob);
-
-        when(userRepository.findByUsername("alice")).thenReturn(Optional.of(alice));
-        when(categoryRepository.findById(99L)).thenReturn(Optional.of(bobsCategory));
-
-        mockMvc.perform(post("/api/tasks")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"name\":\"Sneaky\",\"categoryId\":99,\"isDone\":false}"))
-                .andExpect(status().isBadRequest());
-
-        verify(taskRepository, never()).save(any(Task.class));
-    }
-
-    @Test
-    @WithMockUser("alice")
-    void cannotMoveTaskIntoAnotherUsersCategory() throws Exception {
-        Task task = taskOwnedBy("alice", 1L, "Alice private");
-
-        User bob = new User();
-        bob.setUsername("bob");
-
-        Category bobsCategory = new Category();
-        bobsCategory.setId(99L);
-        bobsCategory.setName("Bob secret");
-        bobsCategory.setColor("#EF4444");
-        bobsCategory.setOwner(bob);
-
-        when(taskRepository.findByIdAndOwnerUsername(1L, "alice")).thenReturn(Optional.of(task));
-        when(categoryRepository.findById(99L)).thenReturn(Optional.of(bobsCategory));
-
-        mockMvc.perform(patch("/api/tasks/{id}", 1L)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"categoryId\":99}"))
-                .andExpect(status().isBadRequest());
-
-        verify(taskRepository, never()).save(any(Task.class));
-    }
-
-    @Test
-    @WithMockUser("alice")
-    void updateLeavesOmittedFieldsAlone() throws Exception {
-        Task task = taskOwnedBy("alice", 1L, "Alice private");
-        task.setDone(true);
-
-        when(taskRepository.findByIdAndOwnerUsername(1L, "alice")).thenReturn(Optional.of(task));
-        when(taskRepository.save(any(Task.class))).thenAnswer(call -> call.getArgument(0));
-
-        mockMvc.perform(patch("/api/tasks/{id}", 1L)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"name\":\"Renamed\"}"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Renamed"))
-                .andExpect(jsonPath("$.isDone").value(true))
-                .andExpect(jsonPath("$.category.name").value("Work"));
-    }
-
-    @Test
-    @WithMockUser("alice")
-    void listFiltersByCategoryParam() throws Exception {
-        Task work = taskOwnedBy("alice", 1L, "Alice private");
-
-        when(taskRepository.findByOwnerUsernameAndCategoryNameIgnoreCase("alice", "Work"))
-                .thenReturn(List.of(work));
-        // Tripwire: the unfiltered query returns an extra task, so ignoring the
-        // ?category param shows up as a length mismatch instead of passing quietly.
-        when(taskRepository.findByOwnerUsername("alice"))
-                .thenReturn(List.of(work, taskOwnedBy("alice", 2L, "Unfiltered")));
-
-        mockMvc.perform(get("/api/tasks").param("category", "Work"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].name").value("Alice private"));
-    }
-
-    @Test
-    @WithMockUser("alice")
-    void listWithoutCategoryParamReturnsEverything() throws Exception {
-        when(taskRepository.findByOwnerUsername("alice"))
-                .thenReturn(List.of(
-                        taskOwnedBy("alice", 1L, "Alice private"),
-                        taskOwnedBy("alice", 2L, "Unfiltered")));
-
-        mockMvc.perform(get("/api/tasks"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(2));
-    }
-
-    @Test
-    @WithMockUser("ghost")
-    void createReturns401WhenTheSessionUserNoLongerExists() throws Exception {
-        mockMvc.perform(post("/api/tasks")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"name\":\"Buy milk\",\"categoryId\":1,\"isDone\":false}"))
-                .andExpect(status().isUnauthorized());
-
-        verify(taskRepository, never()).save(any(Task.class));
-    }
-
-    @Test
-    @WithMockUser("alice")
-    void updateMovesTaskToAnotherOwnedCategory() throws Exception {
-        Task task = taskOwnedBy("alice", 1L, "Alice private");
-
-        Category personal = new Category();
-        personal.setId(2L);
-        personal.setName("Personal");
-        personal.setColor("#10B981");
-        personal.setOwner(task.getOwner());
-
-        when(taskRepository.findByIdAndOwnerUsername(1L, "alice")).thenReturn(Optional.of(task));
-        when(categoryRepository.findByIdAndOwnerUsername(2L, "alice")).thenReturn(Optional.of(personal));
-        when(taskRepository.save(any(Task.class))).thenAnswer(call -> call.getArgument(0));
-
-        mockMvc.perform(patch("/api/tasks/{id}", 1L)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"categoryId\":2}"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.category.id").value(2))
-                .andExpect(jsonPath("$.category.name").value("Personal"))
-                .andExpect(jsonPath("$.name").value("Alice private"));
-    }
-
-    @Test
-    @WithMockUser("alice")
-    void updateCompletesTask() throws Exception {
-        Task task = taskOwnedBy("alice", 1L, "Alice private");
-        when(taskRepository.findByIdAndOwnerUsername(1L, "alice")).thenReturn(Optional.of(task));
-        when(taskRepository.save(any(Task.class))).thenAnswer(call -> call.getArgument(0));
-
-        mockMvc.perform(patch("/api/tasks/{id}", 1L)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"isDone\":true}"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.isDone").value(true))
-                .andExpect(jsonPath("$.name").value("Alice private"));
-    }
-
-    @Test
-    @WithMockUser("alice")
-    void updateUncompletesTask() throws Exception {
-        Task task = taskOwnedBy("alice", 1L, "Alice private");
-        task.setDone(true);
-        when(taskRepository.findByIdAndOwnerUsername(1L, "alice")).thenReturn(Optional.of(task));
-        when(taskRepository.save(any(Task.class))).thenAnswer(call -> call.getArgument(0));
-
-        mockMvc.perform(patch("/api/tasks/{id}", 1L)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"isDone\":false}"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.isDone").value(false));
-    }
-
-    @Test
-    @WithMockUser("alice")
-    void toggleTurnsADoneTaskBackOff() throws Exception {
-        Task task = taskOwnedBy("alice", 1L, "Alice private");
-        task.setDone(true);
-        when(taskRepository.findByIdAndOwnerUsername(1L, "alice")).thenReturn(Optional.of(task));
-        when(taskRepository.save(any(Task.class))).thenAnswer(call -> call.getArgument(0));
-
-        mockMvc.perform(patch("/api/tasks/{id}/toggle", 1L))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.isDone").value(false));
-    }
-
-    @Test
-    @WithMockUser("john")
-    void cannotToggleAnotherUsersTask() throws Exception {
-        Task task = taskOwnedBy("alice", 1L, "Alice private");
-        when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
-
-        mockMvc.perform(patch("/api/tasks/{id}/toggle", 1L))
-                .andExpect(status().isNotFound());
-
-        verify(taskRepository, never()).save(any(Task.class));
-    }
-
 }

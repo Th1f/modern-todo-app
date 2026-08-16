@@ -20,7 +20,6 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
-import com.todoapp.backend.category.CategoryDefaults;
 import com.todoapp.backend.config.SecurityBeans;
 import com.todoapp.backend.config.SecurityConfig;
 
@@ -37,7 +36,7 @@ class LoginTest {
     @MockitoBean
     private UserRepository userRepository;
     @MockitoBean
-    private CategoryDefaults categoryDefaults;
+    private RegistrationService registrationService;
 
     @BeforeEach
     void storeAlice() {

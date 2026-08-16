@@ -1,6 +1,5 @@
 package com.todoapp.backend.user;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -11,107 +10,73 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import com.todoapp.backend.category.CategoryDefaults;
 import com.todoapp.backend.config.SecurityBeans;
 import com.todoapp.backend.config.SecurityConfig;
+import com.todoapp.backend.error.ApiExceptionHandler;
+import com.todoapp.backend.error.ConflictException;
 
 @WebMvcTest(AuthController.class)
-@Import({ SecurityConfig.class, SecurityBeans.class })
+@Import({ SecurityConfig.class, SecurityBeans.class, ApiExceptionHandler.class })
 class AuthControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+
+    @MockitoBean
+    private RegistrationService registrationService;
 
     @MockitoBean
     private UserRepository userRepository;
-    @MockitoBean
-    private CategoryDefaults categoryDefaults;
 
     // ---------- register ----------
 
     @Test
     void registerIsReachableWithoutLoggingIn() throws Exception {
-        when(userRepository.save(any(User.class))).thenAnswer(call -> call.getArgument(0));
-        mockMvc.perform(post("/api/register")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"username\":\"alice\",\"password\":\"password123\"}"))
-                .andExpect(status().isCreated());
-    }
-
-    @Test
-    void registerSeedsDefaultCategories() throws Exception {
-        when(userRepository.save(any(User.class))).thenAnswer(call -> call.getArgument(0));
-
         mockMvc.perform(post("/api/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"username\":\"alice\",\"password\":\"password123\"}"))
                 .andExpect(status().isCreated());
 
-        ArgumentCaptor<User> seeded = ArgumentCaptor.forClass(User.class);
-        verify(categoryDefaults).createFor(seeded.capture());
-        assertThat(seeded.getValue().getUsername()).isEqualTo("alice");
+        verify(registrationService).register("alice", "password123");
     }
 
     @Test
-    void registerHashesThePassword() throws Exception {
-        when(userRepository.save(any(User.class))).thenAnswer(call -> call.getArgument(0));
-
-        mockMvc.perform(post("/api/register")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"username\":\"alice\",\"password\":\"password123\"}"))
-                .andExpect(status().isCreated());
-
-        ArgumentCaptor<User> saved = ArgumentCaptor.forClass(User.class);
-        verify(userRepository).save(saved.capture());
-
-        String stored = saved.getValue().getPassword();
-        assertThat(stored).isNotEqualTo("password123");
-        assertThat(passwordEncoder.matches("password123", stored)).isTrue();
-    }
-
-    @Test
-    void registerRejectsDuplicateUsername() throws Exception {
-        when(userRepository.existsByUsername("alice")).thenReturn(true);
+    void registerConflictBecomes409() throws Exception {
+        when(registrationService.register("alice", "password123"))
+                .thenThrow(new ConflictException("\"alice\" is taken"));
 
         mockMvc.perform(post("/api/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"username\":\"alice\",\"password\":\"password123\"}"))
                 .andExpect(status().isConflict());
-
-        verify(userRepository, never()).save(any(User.class));
-        verify(categoryDefaults, never()).createFor(any(User.class));
     }
 
     @Test
-    void registerRejectsShortPassword() throws Exception {
+    void registerRejectsShortPasswordBeforeReachingTheService() throws Exception {
         mockMvc.perform(post("/api/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"username\":\"alice\",\"password\":\"short\"}"))
                 .andExpect(status().isBadRequest());
 
-        verify(userRepository, never()).save(any(User.class));
+        verify(registrationService, never()).register(any(), any());
     }
 
     @Test
-    void registerRejectsBlankUsername() throws Exception {
+    void registerRejectsBlankUsernameBeforeReachingTheService() throws Exception {
         mockMvc.perform(post("/api/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"username\":\"   \",\"password\":\"password123\"}"))
                 .andExpect(status().isBadRequest());
 
-        verify(userRepository, never()).save(any(User.class));
+        verify(registrationService, never()).register(any(), any());
     }
 
     // ---------- me ----------
