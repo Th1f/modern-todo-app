@@ -1,6 +1,17 @@
 import { useRef, useState, type KeyboardEvent } from "react";
-import { useTasks } from "../../../context/TaskContext";
+import { useTasks, type SortKey } from "../../../context/TaskContext";
+import type { Task } from "../../../api/tasks";
 import { TasksSkeleton } from "./TasksSkeleton";
+
+// Each falls back to the name so the order is stable rather than
+// dependent on whatever the server happened to return.
+const COMPARATORS: Record<SortKey, (a: Task, b: Task) => number> = {
+  name: (a, b) => a.name.localeCompare(b.name),
+  category: (a, b) =>
+    a.category.name.localeCompare(b.category.name) ||
+    a.name.localeCompare(b.name),
+  done: (a, b) => Number(a.isDone) - Number(b.isDone) || a.name.localeCompare(b.name),
+};
 
 export function Tasks() {
   const {
@@ -8,6 +19,8 @@ export function Tasks() {
     loading,
     error,
     selectedCategory,
+    sortBy,
+    sortDirection,
     toggleTask,
     renameTask,
     removeTask,
@@ -58,13 +71,14 @@ export function Tasks() {
     );
   }
 
-  //If it is in all category soft by category else filter tasks by category
-  const visibleTasks =
-    !selectedCategory || selectedCategory === "all"
-      ? [...tasks].sort((a, b) => a.category.name.localeCompare(b.category.name))
-      : tasks.filter(
-          (task) => task.category.name.toLowerCase() === selectedCategory,
-        );
+  const showingAll = !selectedCategory || selectedCategory === "all";
+  const direction = sortDirection === "asc" ? 1 : -1;
+  const visibleTasks = tasks
+    .filter(
+      (task) =>
+        showingAll || task.category.name.toLowerCase() === selectedCategory,
+    )
+    .sort((a, b) => direction * COMPARATORS[sortBy](a, b));
 
   if (visibleTasks.length === 0) {
     return <div className="text-muted py-4 italic text-center">Nothing here yet...</div>;

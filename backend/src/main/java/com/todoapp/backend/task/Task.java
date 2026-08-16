@@ -1,8 +1,7 @@
 package com.todoapp.backend.task;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.todoapp.backend.category.Category;
+import com.todoapp.backend.error.InvalidRequestException;
 import com.todoapp.backend.user.User;
 
 import jakarta.persistence.Column;
@@ -38,13 +37,20 @@ public class Task {
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "owner_id", nullable = false)
-    @JsonIgnore
     private User owner;
 
-    // Named `done` so Lombok's isDone()/setDone() pair up with it as ONE Jackson
-    // property; @JsonProperty then renames that single property for the API.
-    // Calling the field `isDone` instead makes Jackson emit both "done" and "isDone".
-    @JsonProperty("isDone")
     @Column(name = "is_done")
     private boolean done;
+
+    public void toggle() {
+        this.done = !this.done;
+    }
+
+    public void rename(String newName) {
+        String trimmed = newName == null ? "" : newName.trim();
+        if (trimmed.isEmpty()) {
+            throw new InvalidRequestException("Task name must not be blank");
+        }
+        this.name = trimmed;
+    }
 }

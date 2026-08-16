@@ -1,6 +1,5 @@
 package com.todoapp.backend.category;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.todoapp.backend.user.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -44,6 +43,5 @@ public class Category {
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "owner_id", nullable = false)
-    @JsonIgnore
     private User owner;
 }
