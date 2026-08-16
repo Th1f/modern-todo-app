@@ -3,7 +3,11 @@ import * as categoriesApi from "../api/categories";
 import * as tasksApi from "../api/tasks";
 import type { NewCategoryInput, Category } from "../api/categories";
 import type { NewTaskInput, Task } from "../api/tasks";
-import { TaskContext } from "./TaskContext";
+import {
+  TaskContext,
+  type SortDirection,
+  type SortKey,
+} from "./TaskContext";
 
 type TaskProviderProps = {
   children: ReactNode;
@@ -15,6 +19,8 @@ export function TaskProvider({ children }: TaskProviderProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [sortBy, setSortBy] = useState<SortKey>("name");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
 
   //Get all task and categories at page load
   useEffect(() => {
@@ -113,6 +119,10 @@ export function TaskProvider({ children }: TaskProviderProps) {
         error,
         selectedCategory,
         setSelectedCategory,
+        sortBy,
+        setSortBy,
+        sortDirection,
+        setSortDirection,
         addTask,
         addCategory,
         toggleTask,

@@ -55,8 +55,126 @@ describe("states", () => {
 });
 
 describe("listing", () => {
+  it("sorts by name when sortBy is name", () => {
+    renderWithTasks(<Tasks />, {
+      sortBy: "name",
+      tasks: [
+        makeTask(1, "Ship release", work),
+        makeTask(2, "Call mum", personal),
+        makeTask(3, "Archive notes", work),
+      ],
+    });
+
+    const names = screen.getAllByText(/Ship release|Call mum|Archive notes/);
+    expect(names.map((node) => node.textContent)).toEqual([
+      "Archive notes",
+      "Call mum",
+      "Ship release",
+    ]);
+  });
+
+  it("sorts incomplete before complete when sortBy is done", () => {
+    renderWithTasks(<Tasks />, {
+      sortBy: "done",
+      tasks: [
+        makeTask(1, "Finished thing", work, true),
+        makeTask(2, "Open thing", work, false),
+      ],
+    });
+
+    const names = screen.getAllByText(/Finished thing|Open thing/);
+    expect(names.map((node) => node.textContent)).toEqual([
+      "Open thing",
+      "Finished thing",
+    ]);
+  });
+
+  it("reverses the order when the direction is descending", () => {
+    renderWithTasks(<Tasks />, {
+      sortBy: "name",
+      sortDirection: "desc",
+      tasks: [
+        makeTask(1, "Apple", work),
+        makeTask(2, "Zebra", work),
+        makeTask(3, "Mango", work),
+      ],
+    });
+
+    const names = screen.getAllByText(/Apple|Zebra|Mango/);
+    expect(names.map((node) => node.textContent)).toEqual([
+      "Zebra",
+      "Mango",
+      "Apple",
+    ]);
+  });
+
+  it("puts completed first when done is sorted descending", () => {
+    renderWithTasks(<Tasks />, {
+      sortBy: "done",
+      sortDirection: "desc",
+      tasks: [
+        makeTask(1, "Open thing", work, false),
+        makeTask(2, "Finished thing", work, true),
+      ],
+    });
+
+    const names = screen.getAllByText(/Open thing|Finished thing/);
+    expect(names.map((node) => node.textContent)).toEqual([
+      "Finished thing",
+      "Open thing",
+    ]);
+  });
+
+  it("mirrors the tie-break when descending", () => {
+    renderWithTasks(<Tasks />, {
+      sortBy: "category",
+      sortDirection: "desc",
+      tasks: [
+        makeTask(1, "Apple", work),
+        makeTask(2, "Zebra", work),
+        makeTask(3, "Call mum", personal),
+      ],
+    });
+
+    const names = screen.getAllByText(/Apple|Zebra|Call mum/);
+    expect(names.map((node) => node.textContent)).toEqual([
+      "Zebra",
+      "Apple",
+      "Call mum",
+    ]);
+  });
+
+  it("breaks ties on name so the order is stable", () => {
+    renderWithTasks(<Tasks />, {
+      sortBy: "category",
+      tasks: [
+        makeTask(1, "Zebra", work),
+        makeTask(2, "Apple", work),
+      ],
+    });
+
+    const names = screen.getAllByText(/Zebra|Apple/);
+    expect(names.map((node) => node.textContent)).toEqual(["Apple", "Zebra"]);
+  });
+
+  it("sorts the filtered list too, not just the full one", () => {
+    renderWithTasks(<Tasks />, {
+      selectedCategory: "work",
+      sortBy: "name",
+      tasks: [
+        makeTask(1, "Zebra", work),
+        makeTask(2, "Apple", work),
+        makeTask(3, "Call mum", personal),
+      ],
+    });
+
+    const names = screen.getAllByText(/Zebra|Apple|Call mum/);
+    expect(names.map((node) => node.textContent)).toEqual(["Apple", "Zebra"]);
+  });
+
   it("sorts by category name when showing all", () => {
     renderWithTasks(<Tasks />, {
+      sortBy: "category",
       tasks: [
         makeTask(1, "Ship release", work),
         makeTask(2, "Call mum", personal),

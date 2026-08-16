@@ -7,6 +7,9 @@ import {
 import type { Category, NewCategoryInput } from "../api/categories";
 import type { NewTaskInput, Task } from "../api/tasks";
 
+export type SortKey = "name" | "category" | "done";
+export type SortDirection = "asc" | "desc";
+
 export type TaskContextType = {
   tasks: Task[];
   categories: Category[];
@@ -14,6 +17,10 @@ export type TaskContextType = {
   error: string | null;
   selectedCategory: string;
   setSelectedCategory: Dispatch<SetStateAction<string>>;
+  sortBy: SortKey;
+  setSortBy: Dispatch<SetStateAction<SortKey>>;
+  sortDirection: SortDirection;
+  setSortDirection: Dispatch<SetStateAction<SortDirection>>;
   //Create Operations
   addTask: (input: NewTaskInput) => Promise<void>;
   addCategory: (input: NewCategoryInput) => Promise<void>;

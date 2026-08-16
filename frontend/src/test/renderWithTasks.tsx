@@ -20,17 +20,20 @@ export function makeTask(
   return { id, name, category, isDone };
 }
 
-export function renderWithTasks(
-  ui: ReactElement,
+export function makeTaskContextValue(
   overrides: Partial<TaskContextValue> = {},
-) {
-  const value: TaskContextValue = {
+): TaskContextValue {
+  return {
     tasks: [],
     categories: [],
     loading: false,
     error: null,
     selectedCategory: "all",
     setSelectedCategory: vi.fn(),
+    sortBy: "name",
+    setSortBy: vi.fn(),
+    sortDirection: "asc",
+    setSortDirection: vi.fn(),
     addTask: vi.fn().mockResolvedValue(undefined),
     addCategory: vi.fn().mockResolvedValue(undefined),
     toggleTask: vi.fn().mockResolvedValue(undefined),
@@ -40,6 +43,13 @@ export function renderWithTasks(
     removeCategory: vi.fn().mockResolvedValue(undefined),
     ...overrides,
   };
+}
+
+export function renderWithTasks(
+  ui: ReactElement,
+  overrides: Partial<TaskContextValue> = {},
+) {
+  const value = makeTaskContextValue(overrides);
 
   return {
     value,
