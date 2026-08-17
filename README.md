@@ -10,9 +10,9 @@ A multi-user todo application with per-user categories, session authentication, 
 
 ## Demo & Snippets
 
-**Hosted:** _<!-- TODO: paste your Railway URL here -->_
+**Hosted:** [https://todo-app-production-85dd.up.railway.app/](https://todo-app-production-85dd.up.railway.app/)
 
-<!-- TODO: replace with real screenshots -->
+![Home Page](screenshot.png)
 
 | Screen | Description |
 | ------ | ----------- |
