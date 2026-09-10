@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { act, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
@@ -55,9 +55,46 @@ describe("states", () => {
 });
 
 describe("listing", () => {
+  it("puts the newest task first by default", () => {
+    renderWithTasks(<Tasks />, {
+      tasks: [
+        makeTask(1, "Oldest", work),
+        makeTask(2, "Middle", work),
+        makeTask(3, "Newest", work),
+      ],
+    });
+
+    const names = screen.getAllByText(/Oldest|Middle|Newest/);
+    expect(names.map((node) => node.textContent)).toEqual([
+      "Newest",
+      "Middle",
+      "Oldest",
+    ]);
+  });
+
+  it("puts the oldest first when created is sorted ascending", () => {
+    renderWithTasks(<Tasks />, {
+      sortBy: "created",
+      sortDirection: "asc",
+      tasks: [
+        makeTask(3, "Newest", work),
+        makeTask(1, "Oldest", work),
+        makeTask(2, "Middle", work),
+      ],
+    });
+
+    const names = screen.getAllByText(/Oldest|Middle|Newest/);
+    expect(names.map((node) => node.textContent)).toEqual([
+      "Oldest",
+      "Middle",
+      "Newest",
+    ]);
+  });
+
   it("sorts by name when sortBy is name", () => {
     renderWithTasks(<Tasks />, {
       sortBy: "name",
+      sortDirection: "asc",
       tasks: [
         makeTask(1, "Ship release", work),
         makeTask(2, "Call mum", personal),
@@ -76,6 +113,7 @@ describe("listing", () => {
   it("sorts incomplete before complete when sortBy is done", () => {
     renderWithTasks(<Tasks />, {
       sortBy: "done",
+      sortDirection: "asc",
       tasks: [
         makeTask(1, "Finished thing", work, true),
         makeTask(2, "Open thing", work, false),
@@ -147,6 +185,7 @@ describe("listing", () => {
   it("breaks ties on name so the order is stable", () => {
     renderWithTasks(<Tasks />, {
       sortBy: "category",
+      sortDirection: "asc",
       tasks: [
         makeTask(1, "Zebra", work),
         makeTask(2, "Apple", work),
@@ -161,6 +200,7 @@ describe("listing", () => {
     renderWithTasks(<Tasks />, {
       selectedCategory: "work",
       sortBy: "name",
+      sortDirection: "asc",
       tasks: [
         makeTask(1, "Zebra", work),
         makeTask(2, "Apple", work),
@@ -175,6 +215,7 @@ describe("listing", () => {
   it("sorts by category name when showing all", () => {
     renderWithTasks(<Tasks />, {
       sortBy: "category",
+      sortDirection: "asc",
       tasks: [
         makeTask(1, "Ship release", work),
         makeTask(2, "Call mum", personal),
@@ -317,5 +358,63 @@ describe("deleting", () => {
     await user.click(screen.getByRole("button", { name: "Delete Buy milk" }));
 
     expect(value.removeTask).not.toHaveBeenCalled();
+  });
+});
+
+describe("the newly added task", () => {
+  it("marks only that row", () => {
+    renderWithTasks(<Tasks />, {
+      lastAddedId: 2,
+      tasks: [makeTask(1, "Old thing", work), makeTask(2, "New thing", work)],
+    });
+
+    expect(screen.getByText("New thing").closest("[data-new]")).not.toBeNull();
+    expect(screen.getByText("Old thing").closest("[data-new]")).toBeNull();
+  });
+
+  it("scrolls the row into view", () => {
+    const scrollIntoView = vi.fn();
+    Element.prototype.scrollIntoView = scrollIntoView;
+
+    renderWithTasks(<Tasks />, {
+      lastAddedId: 2,
+      tasks: [makeTask(1, "Old thing", work), makeTask(2, "New thing", work)],
+    });
+
+    expect(scrollIntoView).toHaveBeenCalledWith({ block: "nearest" });
+  });
+
+  it("announces it for screen readers", () => {
+    renderWithTasks(<Tasks />, {
+      lastAddedId: 2,
+      tasks: [makeTask(1, "Old thing", work), makeTask(2, "New thing", work)],
+    });
+
+    expect(screen.getByRole("status")).toHaveTextContent("Added New thing");
+  });
+
+  it("stops highlighting once the flash has run", () => {
+    vi.useFakeTimers();
+    const { value } = renderWithTasks(<Tasks />, {
+      lastAddedId: 2,
+      tasks: [makeTask(1, "Old thing", work), makeTask(2, "New thing", work)],
+    });
+
+    expect(value.clearLastAdded).not.toHaveBeenCalled();
+    act(() => {
+      vi.advanceTimersByTime(1500);
+    });
+
+    expect(value.clearLastAdded).toHaveBeenCalled();
+    vi.useRealTimers();
+  });
+
+  it("highlights nothing when no task was just added", () => {
+    renderWithTasks(<Tasks />, {
+      tasks: [makeTask(1, "Old thing", work)],
+    });
+
+    expect(document.querySelector("[data-new]")).toBeNull();
+    expect(screen.getByRole("status")).toHaveTextContent("");
   });
 });
