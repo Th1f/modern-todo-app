@@ -7,7 +7,7 @@ import {
 import type { Category, NewCategoryInput } from "../api/categories";
 import type { NewTaskInput, Task } from "../api/tasks";
 
-export type SortKey = "name" | "category" | "done";
+export type SortKey = "created" | "name" | "category" | "done";
 export type SortDirection = "asc" | "desc";
 
 export type TaskContextType = {
@@ -21,6 +21,10 @@ export type TaskContextType = {
   setSortBy: Dispatch<SetStateAction<SortKey>>;
   sortDirection: SortDirection;
   setSortDirection: Dispatch<SetStateAction<SortDirection>>;
+  // The task added most recently, so the list can point it out instead of
+  // leaving the user to hunt for it. Null once the list has done so.
+  lastAddedId: number | null;
+  clearLastAdded: () => void;
   //Create Operations
   addTask: (input: NewTaskInput) => Promise<void>;
   addCategory: (input: NewCategoryInput) => Promise<void>;

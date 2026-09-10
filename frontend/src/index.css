@@ -10,6 +10,15 @@
   --color-work:#C14B2A;
   --color-personal:#3D6B54;
   --color-errands:#8C6D2F;
+
+  /* Fades a wash of the accent colour off a just-added row. A colour fade
+     rather than movement, so it stays readable with reduced motion on. */
+  --animate-task-flash: task-flash 1.5s ease-out;
+
+  @keyframes task-flash {
+    from { background-color: color-mix(in oklab, var(--color-accent) 20%, transparent); }
+    to   { background-color: transparent; }
+  }
 }
 
 html{

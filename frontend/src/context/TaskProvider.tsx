@@ -19,8 +19,11 @@ export function TaskProvider({ children }: TaskProviderProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState("all");
-  const [sortBy, setSortBy] = useState<SortKey>("name");
-  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+  // Newest first by default: a task you just typed should be the first thing
+  // you see, not something to hunt for halfway down an alphabetical list.
+  const [sortBy, setSortBy] = useState<SortKey>("created");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+  const [lastAddedId, setLastAddedId] = useState<number | null>(null);
 
   //Get all task and categories at page load
   useEffect(() => {
@@ -46,7 +49,10 @@ export function TaskProvider({ children }: TaskProviderProps) {
   const addTask = useCallback(async (input: NewTaskInput) => {
     const created = await tasksApi.createTask(input);
     setTasks((prev) => [...prev, created]);
+    setLastAddedId(created.id);
   }, []);
+
+  const clearLastAdded = useCallback(() => setLastAddedId(null), []);
 
   const addCategory = useCallback(async (input: NewCategoryInput) => {
     const created = await categoriesApi.createCategory(input);
@@ -123,6 +129,8 @@ export function TaskProvider({ children }: TaskProviderProps) {
         setSortBy,
         sortDirection,
         setSortDirection,
+        lastAddedId,
+        clearLastAdded,
         addTask,
         addCategory,
         toggleTask,

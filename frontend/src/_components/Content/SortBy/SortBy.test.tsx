@@ -41,10 +41,10 @@ function Stateful({ initial = "category" as SortKey }) {
 }
 
 describe("rendering", () => {
-  it("offers the three sort options", () => {
+  it("offers the four sort options", () => {
     renderWithTasks(<SortBy />);
 
-    expect(screen.getAllByRole("radio")).toHaveLength(3);
+    expect(screen.getAllByRole("radio")).toHaveLength(4);
     expect(
       screen.getByRole("radiogroup", { name: "Sort tasks by" }),
     ).toBeInTheDocument();
@@ -54,6 +54,7 @@ describe("rendering", () => {
     renderWithTasks(<SortBy />, { sortBy: "name" });
 
     expect(option("Name")).toBeChecked();
+    expect(option("Created")).not.toBeChecked();
     expect(option("Category")).not.toBeChecked();
     expect(option("Done")).not.toBeChecked();
   });
@@ -127,6 +128,27 @@ describe("clicking", () => {
     expect(option("Name")).toHaveTextContent("↑");
   });
 
+  it("starts Created newest-first rather than oldest-first", async () => {
+    const user = userEvent.setup();
+    render(<Stateful />);
+
+    await user.click(option("Created"));
+
+    expect(option("Created")).toBeChecked();
+    expect(option("Created")).toHaveTextContent("↓");
+    expect(option("Created")).toHaveAccessibleName(/descending/);
+  });
+
+  it("still flips Created when pressed again", async () => {
+    const user = userEvent.setup();
+    render(<Stateful />);
+
+    await user.click(option("Created"));
+    await user.click(option("Created"));
+
+    expect(option("Created")).toHaveTextContent("↑");
+  });
+
   it("moves the tab stop to the new selection", async () => {
     const user = userEvent.setup();
     render(<Stateful />);
@@ -191,8 +213,8 @@ describe("keyboard", () => {
     await user.tab();
     await user.keyboard("{ArrowRight}{ArrowRight}");
 
-    expect(option("Name")).toHaveFocus();
-    expect(option("Name")).toBeChecked();
+    expect(option("Created")).toHaveFocus();
+    expect(option("Created")).toBeChecked();
   });
 
   it("wraps around at the start", async () => {
@@ -200,7 +222,7 @@ describe("keyboard", () => {
     render(<Stateful />);
 
     await user.tab();
-    await user.keyboard("{ArrowLeft}{ArrowLeft}");
+    await user.keyboard("{ArrowLeft}{ArrowLeft}{ArrowLeft}");
 
     expect(option("Done")).toHaveFocus();
   });
@@ -226,7 +248,7 @@ describe("keyboard", () => {
     expect(option("Done")).toBeChecked();
 
     await user.keyboard("{Home}");
-    expect(option("Name")).toBeChecked();
+    expect(option("Created")).toBeChecked();
   });
 
   it("leaves the group on Tab rather than cycling within it", async () => {

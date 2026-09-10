@@ -1,10 +1,21 @@
 import { useRef, type KeyboardEvent } from "react";
-import { useTasks, type SortKey } from "../../../context/TaskContext";
+import {
+  useTasks,
+  type SortDirection,
+  type SortKey,
+} from "../../../context/TaskContext";
 
-const OPTIONS: { key: SortKey; label: string }[] = [
-  { key: "name", label: "Name" },
-  { key: "category", label: "Category" },
-  { key: "done", label: "Done" },
+// Each field carries the direction it reads naturally in: newest first for
+// Created, A-Z or unfinished-first for the rest.
+const OPTIONS: {
+  key: SortKey;
+  label: string;
+  defaultDirection: SortDirection;
+}[] = [
+  { key: "created", label: "Created", defaultDirection: "desc" },
+  { key: "name", label: "Name", defaultDirection: "asc" },
+  { key: "category", label: "Category", defaultDirection: "asc" },
+  { key: "done", label: "Done", defaultDirection: "asc" },
 ];
 
 export function SortBy() {
@@ -17,19 +28,20 @@ export function SortBy() {
   };
 
   // Pressing the active option flips the direction; moving to a different one
-  // starts ascending, since carrying a descending sort across fields is
-  // rarely what anyone means.
-  const choose = (key: SortKey) => {
-    if (key === sortBy) {
+  // starts at that field's default, since carrying a direction across fields
+  // is rarely what anyone means.
+  const choose = (i: number) => {
+    const option = OPTIONS[i];
+    if (option.key === sortBy) {
       setSortDirection((current) => (current === "asc" ? "desc" : "asc"));
     } else {
-      setSortBy(key);
-      setSortDirection("asc");
+      setSortBy(option.key);
+      setSortDirection(option.defaultDirection);
     }
   };
 
   const select = (i: number) => {
-    choose(OPTIONS[i].key);
+    choose(i);
     focusButton(i);
   };
 
@@ -79,7 +91,7 @@ export function SortBy() {
             ref={(el) => {
               buttonRef.current[i] = el;
             }}
-            onClick={() => choose(option.key)}
+            onClick={() => choose(i)}
             onKeyDown={(e) => handleKeyDown(e, i)}
             className={`flex items-center gap-1 border px-2 py-1 rounded-full text-xs cursor-pointer ${
               isSelected
